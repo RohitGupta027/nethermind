@@ -123,7 +123,7 @@ namespace Nethermind.Blockchain.Tracing
             if (block.Number != 0)
             {
                 BlockHeader parent = _blockTree.FindParentHeader(block.Header, BlockTreeLookupOptions.None);
-                if (!_blockTree.IsMainChain(parent.Hash)) throw new InvalidOperationException("Cannot trace orphaned blocks");
+                if (parent == null) throw new InvalidOperationException("Cannot trace orphaned blocks");
             }
 
             GethLikeBlockTracer listener = txHash == null ? new GethLikeBlockTracer(options) : new GethLikeBlockTracer(txHash, options);
