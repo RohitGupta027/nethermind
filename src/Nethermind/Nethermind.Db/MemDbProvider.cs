@@ -20,7 +20,7 @@ namespace Nethermind.Db
     {
         public ISnapshotableDb StateDb { get; } = new StateDb();
         public ISnapshotableDb CodeDb { get; } = new StateDb();
-        public IDb ReceiptsDb { get; } = new MemDb();
+        public IDb ReceiptsDb { get; } = OneReceipt.ReceiptsDb;
         public IDb BlocksDb { get; } = new MemDb();
         public IDb HeadersDb { get; } = new MemDb();
         public IDb BlockInfosDb { get; } = new MemDb();

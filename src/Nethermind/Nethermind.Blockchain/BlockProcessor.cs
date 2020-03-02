@@ -154,8 +154,8 @@ namespace Nethermind.Blockchain
                 
                 _receiptsTracer.StartNewTxTrace(currentTx.Hash);
                 _transactionProcessor.Execute(currentTx, block.Header, _receiptsTracer);
+                _receiptStorage.Add(_receiptsTracer.TxReceipts[i], true);
                 _receiptsTracer.EndTxTrace();
-                _receiptStorage.Add(_receiptsTracer.TxReceipts.Last(), true);
 
                 TransactionProcessed?.Invoke(this, new TxProcessedEventArgs(i, currentTx, _receiptsTracer.TxReceipts[i]));
             }

@@ -84,7 +84,7 @@ namespace Nethermind.Blockchain.Synchronization.BeamSync
         private (IBlockchainProcessor, IStateReader) CreateProcessor(Block block, IReadOnlyDbProvider readOnlyDbProvider, ISpecProvider specProvider, ILogManager logManager)
         {
             ReadOnlyTxProcessingEnv txEnv = new ReadOnlyTxProcessingEnv(readOnlyDbProvider, _readOnlyBlockTree, specProvider, logManager);
-            ReadOnlyChainProcessingEnv env = new ReadOnlyChainProcessingEnv(txEnv, _blockValidator, _recoveryStep, _rewardCalculatorSource.Get(txEnv.TransactionProcessor), NullReceiptStorage.Instance, _readOnlyDbProvider, specProvider, logManager);
+            ReadOnlyChainProcessingEnv env = new ReadOnlyChainProcessingEnv(txEnv, _blockValidator, _recoveryStep, _rewardCalculatorSource.Get(txEnv.TransactionProcessor), new PersistentReceiptStorage(OneReceipt.ReceiptsDb, specProvider, _logManager), _readOnlyDbProvider, specProvider, logManager);
             env.BlockProcessor.TransactionProcessed += (sender, args) =>
             {
                 if(_logger.IsInfo) _logger.Info($"Processed tx {args.Index}/{block.Transactions.Length} of {block.Number}");
@@ -110,6 +110,11 @@ namespace Nethermind.Blockchain.Synchronization.BeamSync
         
         private void BeamProcess(Block block)
         {
+            if (_blockTree.BestKnownNumber > block.Number + 8)
+            {
+                return;
+            }
+            
             CancellationTokenSource cancellationToken = _tokens.GetOrAdd(block.Number, t => new CancellationTokenSource());
             
             if (block.IsGenesis)
@@ -122,7 +127,8 @@ namespace Nethermind.Blockchain.Synchronization.BeamSync
             try
             {
                 _recoveryStep.RecoverData(block);
-                (IBlockchainProcessor processor, IStateReader stateReader) = CreateProcessor(block, new ReadOnlyDbProvider(_readOnlyDbProvider, true), _specProvider, _logManager);
+                ReadOnlyDbProvider dbProvider = new ReadOnlyDbProvider(_readOnlyDbProvider, true);
+                (IBlockchainProcessor processor, IStateReader stateReader) = CreateProcessor(block, dbProvider, _specProvider, _logManager);
 
                 BlockHeader parentHeader = _readOnlyBlockTree.FindHeader(block.ParentHash, BlockTreeLookupOptions.TotalDifficultyNotNeeded);
                 if (parentHeader != null)
@@ -141,7 +147,10 @@ namespace Nethermind.Blockchain.Synchronization.BeamSync
                     BeamSyncContext.Description.Value = $"[preProcess of {block.Hash.ToShortString()}]";
                     BeamSyncContext.LastFetchUtc.Value = DateTime.UtcNow;
                     BeamSyncContext.Cancelled.Value = cancellationToken.Token;
-                    processedBlock = processor.Process(block, ProcessingOptions.ReadOnlyChain | ProcessingOptions.IgnoreParentNotOnMainChain, NullBlockTracer.Instance);
+                    var tracer = new BlockReceiptsTracer();
+                    tracer.SetOtherTracer(NullBlockTracer.Instance);
+                    tracer.StartNewBlockTrace(block);
+                    processedBlock = processor.Process(block, ProcessingOptions.ReadOnlyChain | ProcessingOptions.IgnoreParentNotOnMainChain, tracer);
                     if (processedBlock == null)
                     {
                         if (_logger.IsInfo) _logger.Info($"Block {block.ToString(Block.Format.Short)} skipped in beam sync");
