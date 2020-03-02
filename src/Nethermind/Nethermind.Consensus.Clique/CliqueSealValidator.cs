@@ -144,6 +144,7 @@ namespace Nethermind.Consensus.Clique
 
         public bool ValidateSeal(BlockHeader header, bool force)
         {
+            _logger.Info($"Validating seal of {header.ToString(BlockHeader.Format.Short)}");
             header.Author ??= _snapshotManager.GetBlockSealer(header);
             return header.Author != null;
         }
