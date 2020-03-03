@@ -69,7 +69,7 @@ namespace Nethermind.Blockchain
             decimal totalMicroseconds = _processingStopwatch.ElapsedTicks * (1_000_000m / Stopwatch.Frequency);
             decimal chunkMicroseconds = (_processingStopwatch.ElapsedTicks - _lastElapsedTicks) * (1_000_000m / Stopwatch.Frequency);
 
-            if (chunkMicroseconds > 1 * 1000 * 1000)
+            // if (chunkMicroseconds > 1 * 1000 * 1000)
             {
                 long currentGen0 = GC.CollectionCount(0);
                 long currentGen1 = GC.CollectionCount(1);

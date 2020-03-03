@@ -279,8 +279,10 @@ namespace Nethermind.Trie
         internal Rlp RlpEncode()
         {
             Rlp rlp = _nodeDecoder.Encode(this);
+            Console.WriteLine($"Adding {NodeType} ({rlp.Bytes.Length} bytes)");
+            
             // just included here to improve the class reading
-            // after some analysis I believe that any non-test Ethereum cases of a trie ever have nodes with RLP shorter than 32 bytes
+            // after some analysis I believe that no non-test Ethereum cases of a trie ever have nodes with RLP shorter than 32 bytes
             // if (rlp.Bytes.Length < 32)
             // {
             //     throw new InvalidDataException("Unexpected less than 32");
