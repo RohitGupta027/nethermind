@@ -30,7 +30,7 @@ namespace Nethermind.Blockchain
         DoNotVerifyNonce = 32,
         All = 63,
         ProducingBlock = NoValidation | ReadOnlyChain,
-        Trace = ForceProcessing | ReadOnlyChain | DoNotVerifyNonce | NoValidation,
+        Trace = ForceProcessing | ReadOnlyChain | DoNotVerifyNonce | NoValidation | IgnoreParentNotOnMainChain
     }
 
     public static class ProcessingOptionsExtensions

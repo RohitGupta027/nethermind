@@ -108,6 +108,14 @@ namespace Nethermind.JsonRpc.Modules.Trace
             }
 
             Block block = blockSearch.Object;
+            Transaction transaction = block.Transactions.FirstOrDefault(t => t.Hash == txHash);
+            if (transaction == null)
+            {
+                return ResultWrapper<ParityTxTraceFromReplay>.Fail("tx not found");
+            }
+
+            int indexOfTx = Array.IndexOf(block.Transactions, transaction);
+            block.Body = block.Body.WithChangedTransactions(block.Transactions.Take(indexOfTx + 1).ToArray());
 
             ParityLikeTxTrace txTrace = TraceTx(block, txHash, GetParityTypes(traceTypes));
             return ResultWrapper<ParityTxTraceFromReplay>.Success(new ParityTxTraceFromReplay(txTrace));
@@ -169,6 +177,14 @@ namespace Nethermind.JsonRpc.Modules.Trace
             }
 
             Block block = blockSearch.Object;
+            Transaction transaction = block.Transactions.FirstOrDefault(t => t.Hash == txHash);
+            if (transaction == null)
+            {
+                return ResultWrapper<ParityTxTraceFromStore[]>.Fail("tx not found");
+            }
+
+            int indexOfTx = Array.IndexOf(block.Transactions, transaction);
+            block.Body = block.Body.WithChangedTransactions(block.Transactions.Take(indexOfTx + 1).ToArray());
 
             ParityLikeTxTrace txTrace = TraceTx(block, txHash, ParityTraceTypes.Trace | ParityTraceTypes.Rewards);
             return ResultWrapper<ParityTxTraceFromStore[]>.Success(ParityTxTraceFromStore.FromTxTrace(txTrace));

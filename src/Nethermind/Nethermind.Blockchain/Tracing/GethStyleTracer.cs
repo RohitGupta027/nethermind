@@ -63,7 +63,7 @@ namespace Nethermind.Blockchain.Tracing
                 return null;
             }
 
-            Block block = _blockTree.FindBlock(txReceipt.BlockNumber, BlockTreeLookupOptions.RequireCanonical);
+            Block block = _blockTree.FindBlock(txReceipt.BlockNumber, BlockTreeLookupOptions.None);
             if (block == null)
             {
                 return null;
@@ -111,6 +111,15 @@ namespace Nethermind.Blockchain.Tracing
 
         private GethLikeTxTrace Trace(Block block, Keccak txHash, GethTraceOptions options)
         {
+            Transaction transaction = block.Transactions.FirstOrDefault(t => t.Hash == txHash);
+            if (transaction == null)
+            {
+                return null;
+            }
+
+            int indexOfTx = Array.IndexOf(block.Transactions, transaction);
+            block.Body = block.Body.WithChangedTransactions(block.Transactions.Take(indexOfTx + 1).ToArray());
+            
             GethLikeBlockTracer listener = new GethLikeBlockTracer(txHash, options);
             _processor.Process(block, ProcessingOptions.Trace, listener);
             return listener.BuildResult().SingleOrDefault();
