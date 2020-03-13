@@ -204,39 +204,12 @@ namespace Nethermind.TxPool
             }
 
             Metrics.PendingTransactionsReceived++;
-
-//            if (tx.Signature.ChainId == null)
-//            {
-//                // Note that we are discarding here any transactions that follow the old signature scheme (no ChainId).
-//                Metrics.PendingTransactionsDiscarded++;
-//                return AddTxResult.OldScheme;
-//            }
-
+            
             if (tx.Signature.ChainId != null && tx.Signature.ChainId != _specProvider.ChainId)
             {
                 // It may happen that other nodes send us transactions that were signed for another chain.
                 Metrics.PendingTransactionsDiscarded++;
                 return AddTxResult.InvalidChainId;
-            }
-
-            /* We have encountered multiple transactions that do not resolve sender address properly.
-             * We need to investigate what these txs are and why the sender address is resolved to null.
-             * Then we need to decide whether we really want to broadcast them.
-             * */
-
-            if (tx.SenderAddress == null)
-            {
-                tx.SenderAddress = _ecdsa.RecoverAddress(tx, blockNumber);
-            }
-
-            /* Note that here we should also test incoming transactions for old nonce.
-             * This is not a critical check and it is expensive since it requires state read so it is better
-             * if we leave it for block production only.
-             * */
-
-            if (managedNonce && CheckOwnTransactionAlreadyUsed(tx))
-            {
-                return AddTxResult.OwnNonceAlreadyUsed;
             }
 
             if (!_transactions.TryInsert(tx.Hash, tx))
@@ -251,6 +224,26 @@ namespace Nethermind.TxPool
                 // If transaction is a bit older and already known then it may be stored in the persistent storage.
                 Metrics.PendingTransactionsKnown++;
                 return AddTxResult.AlreadyKnown;
+            }
+
+            /* We have encountered multiple transactions that do not resolve sender address properly.
+             * We need to investigate what these txs are and why the sender address is resolved to null.
+             * Then we need to decide whether we really want to broadcast them.
+             */
+
+            if (tx.SenderAddress == null)
+            {
+                tx.SenderAddress = _ecdsa.RecoverAddress(tx, blockNumber);
+            }
+
+            /* Note that here we should also test incoming transactions for old nonce.
+             * This is not a critical check and it is expensive since it requires state read so it is better
+             * if we leave it for block production only.
+             */
+
+            if (managedNonce && CheckOwnTransactionAlreadyUsed(tx))
+            {
+                return AddTxResult.OwnNonceAlreadyUsed;
             }
 
             HandleOwnTransaction(tx, isPersistentBroadcast);
