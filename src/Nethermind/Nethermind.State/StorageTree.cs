@@ -61,7 +61,7 @@ namespace Nethermind.State
 
             Span<byte> span = stackalloc byte[32];
             index.ToBigEndian(span);
-            return ValueKeccak.Compute(span).BytesAsSpan.ToArray();
+            return ValueKeccak.Compute(span).BytesAsSpan;
         }
         
         public byte[] Get(UInt256 index)
